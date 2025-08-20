@@ -1,0 +1,12 @@
+name: airadiology-optimizer
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - flask
+      - requests
+      - pandas
+      - numpy
+      - scikit-learn
+      - pillow
+      - reportlab
