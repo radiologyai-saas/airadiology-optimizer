@@ -1,0 +1,10 @@
+flask
+streamlit
+openai
+requests
+pillow
+reportlab
+stripe
+numpy
+pandas
+scikit-learn
