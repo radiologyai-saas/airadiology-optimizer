@@ -10,3 +10,6 @@ dependencies:
       - scikit-learn
       - pillow
       - reportlab
+      - openai
+      - streamlit
+      - stripe
