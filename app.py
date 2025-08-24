@@ -1,9 +1,10 @@
 
 import streamlit as st
 import openai
+from key_utils import get_openai_api_key
 
 # 🔐 Secret Key Setup
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = get_openai_api_key(st.secrets)
 
 # UI Elements
 st.title("🧠 AI Radiology Optimizer")
