@@ -1,7 +1,11 @@
 """Streamlit frontend for the Radiology AI platform."""
+import logging
+
 import requests
 import streamlit as st
 import openai
+
+logger = logging.getLogger(__name__)
 
 BACKEND_URL = st.secrets.get("BACKEND_URL", "http://localhost:5000")
 openai.api_key = st.secrets.get("OPENAI_API_KEY", "")
@@ -44,10 +48,16 @@ elif page == "Upload & Analyze":
     st.title("Upload Scan")
     file = st.file_uploader("Scan image", type=["png", "jpg", "jpeg"])
     if st.button("Analyze") and file:
-        resp = requests.post(
-            f"{BACKEND_URL}/api/analyze", files={"image": file.getvalue()}
-        )
-        st.write(resp.json())
+        try:
+            resp = requests.post(
+                f"{BACKEND_URL}/api/analyze",
+                files={"image": (file.name, file.getvalue(), file.type or "image/png")},
+            )
+            resp.raise_for_status()
+            st.write(resp.json())
+        except requests.RequestException as exc:  # pragma: no cover - UI only
+            logger.exception("Image analysis request failed: %s", exc)
+            st.error("Analysis failed")
 
 
 elif page == "Generate Report":
@@ -55,53 +65,80 @@ elif page == "Generate Report":
     patient = st.text_input("Patient name")
     findings = st.text_area("Findings")
     if st.button("Create PDF"):
-        resp = requests.post(
-            f"{BACKEND_URL}/api/report", json={"patient": patient, "findings": findings}
-        )
-        if resp.status_code == 200:
-            st.download_button(
-                "Download Report",
-                data=resp.content,
-                file_name=f"{patient.replace(' ', '_')}_report.pdf",
+        try:
+            resp = requests.post(
+                f"{BACKEND_URL}/api/report",
+                json={"patient": patient, "findings": findings},
             )
-        else:
-            st.error("Report generation failed")
+            if resp.status_code == 200:
+                st.download_button(
+                    "Download Report",
+                    data=resp.content,
+                    file_name=f"{patient.replace(' ', '_')}_report.pdf",
+                )
+            else:
+                st.error("Report generation failed")
+        except requests.RequestException as exc:  # pragma: no cover - UI only
+            logger.exception("Report request failed: %s", exc)
+            st.error("Report request failed")
 
 
 elif page == "Leaderboard":
     st.title("Leaderboard")
-    resp = requests.get(f"{BACKEND_URL}/api/leaderboard")
-    st.table(resp.json())
+    try:
+        resp = requests.get(f"{BACKEND_URL}/api/leaderboard")
+        resp.raise_for_status()
+        st.table(resp.json())
+    except requests.RequestException as exc:  # pragma: no cover - UI only
+        logger.exception("Failed to load leaderboard: %s", exc)
+        st.error("Leaderboard unavailable")
 
 
 elif page == "Quiz":
     st.title("Intern Quiz")
-    q_resp = requests.get(f"{BACKEND_URL}/api/quiz/question").json()
-    st.write(q_resp["question"])
-    choice = st.radio("Options", q_resp["options"], index=0)
-    if st.button("Submit"):
-        idx = q_resp["options"].index(choice)
-        a_resp = requests.post(
-            f"{BACKEND_URL}/api/quiz/answer",
-            json={"id": q_resp["id"], "answer": idx},
-        )
-        if a_resp.json().get("correct"):
-            st.success("Correct!")
-        else:
-            st.error("Incorrect")
+    try:
+        q_resp = requests.get(f"{BACKEND_URL}/api/quiz/question")
+        q_resp.raise_for_status()
+        q_data = q_resp.json()
+        st.write(q_data["question"])
+        choice = st.radio("Options", q_data["options"], index=0)
+        if st.button("Submit"):
+            idx = q_data["options"].index(choice)
+            a_resp = requests.post(
+                f"{BACKEND_URL}/api/quiz/answer",
+                json={"id": q_data["id"], "answer": idx},
+            )
+            if a_resp.json().get("correct"):
+                st.success("Correct!")
+            else:
+                st.error("Incorrect")
+    except requests.RequestException as exc:  # pragma: no cover - UI only
+        logger.exception("Quiz load failed: %s", exc)
+        st.error("Quiz unavailable")
 
 
 elif page == "Referral":
     st.title("Referral Tracking")
     code = st.text_input("Referral code")
     if st.button("Register"):
-        resp = requests.post(f"{BACKEND_URL}/api/referral", json={"code": code})
-        data = resp.json()
-        st.write(f"Code {data['code']} used {data['count']} times")
+        try:
+            resp = requests.post(f"{BACKEND_URL}/api/referral", json={"code": code})
+            resp.raise_for_status()
+            data = resp.json()
+            st.write(f"Code {data['code']} used {data['count']} times")
+        except requests.RequestException as exc:  # pragma: no cover - UI only
+            logger.exception("Referral request failed: %s", exc)
+            st.error("Referral registration failed")
     st.markdown("---")
     price_id = st.text_input("Stripe Price ID")
     if st.button("Create Checkout Session"):
-        resp = requests.post(
-            f"{BACKEND_URL}/api/checkout", json={"price_id": price_id}
-        )
-        st.write(resp.json())
+        try:
+            resp = requests.post(
+                f"{BACKEND_URL}/api/checkout", json={"price_id": price_id}
+            )
+            resp.raise_for_status()
+            st.write(resp.json())
+        except requests.RequestException as exc:  # pragma: no cover - UI only
+            logger.exception("Checkout session creation failed: %s", exc)
+            st.error("Checkout creation failed")
+
