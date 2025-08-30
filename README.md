@@ -16,15 +16,12 @@ pip install -r requirements.txt
 ```
 
 ## Running locally
-1. Start the Flask backend:
+1. Install dependencies and run both services:
    ```
-   python main.py
+   bash scripts/start.sh
    ```
-2. In another terminal run the Streamlit frontend:
-   ```
-   streamlit run frontend/app.py
-   ```
-   Set `BACKEND_URL` in `.streamlit/secrets.toml` if the backend runs on a different host.
+   The script launches the Flask backend and the Streamlit frontend together. Set
+   `BACKEND_URL` in `.streamlit/secrets.toml` if the backend runs on a different host.
 
 ## Deploying to Render
 - Use a Python environment.
@@ -35,5 +32,6 @@ pip install -r requirements.txt
 - Create a new Replit using Python.
 - Add the contents of this repository.
 - In the shell run `pip install -r requirements.txt`.
-- Use the Run button to execute `streamlit run frontend/app.py` or customize the `replit.nix`/Run configuration to start both backend and frontend.
+- Use the Run button to execute `streamlit run frontend/app.py` or customize
+  the `replit.nix`/Run configuration to start both backend and frontend.
 
