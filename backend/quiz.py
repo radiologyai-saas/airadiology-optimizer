@@ -34,7 +34,10 @@ def get_question() -> dict:
 def check_answer(qid: int, answer_index: int) -> bool:
     for q in QUESTIONS:
         if q["id"] == qid:
-            correct = q["answer"] == answer_index
+            try:
+                correct = q["answer"] == int(answer_index)
+            except (ValueError, TypeError):
+                correct = False
             logger.info("Question %s answered %s", qid, correct)
             return correct
     return False
